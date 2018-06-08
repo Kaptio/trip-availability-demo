@@ -1,0 +1,368 @@
+<apex:page showHeader="false" sidebar="false" controller="TripAvailabilitySearchController">
+
+    <apex:slds />
+
+    <style>
+        .c-hidden {
+            display: none !important;
+        }
+        .c-package-name {
+        	width: 100px;
+        }
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://use.fontawesome.com/14ee000d5e.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-route.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        (function(root, factory) {
+            'use strict';
+            root['angular-flatpickr'] = factory(root.angular, root.flatpickr);
+        }(this, function(angular, flatpickr) {
+
+            'use strict';
+            var ngFlatpickr = angular.module('angular-flatpickr', []);
+            ngFlatpickr.directive('ngFlatpickr', [function() {
+                return {
+                    require: 'ngModel',
+                    restrict: 'A',
+                    scope: {
+                        fpOpts: '&',
+                        fpOnSetup: '&'
+                    },
+                    link: function(scope, element, attrs, ngModel) {
+
+                        var vp;
+                        if (!FlatpickrInstance && !flatpickr) {
+                            console.warn('Unable to find any flatpickr installation');
+                            return;
+                        }
+                        if (FlatpickrInstance) {
+                            vp = new FlatpickrInstance(element[0], scope.fpOpts());
+                        } else {
+                            vp = new flatpickr(element[0], scope.fpOpts());
+                        }
+
+                        if (scope.fpOnSetup) {
+                            scope.fpOnSetup({
+                    fpItem: vp
+                            });
+                        }
+
+                        // destroy the flatpickr instance when the dom element is removed
+                        element.on('$destroy', function() {
+                            try {
+                    vp.destroy();
+                            } catch (e) {
+
+                            }
+                        });
+                    }
+                };
+            }]);
+
+            return ngFlatpickr;
+
+        }));
+    </script>
+
+    <div ng-app="DemoApp" ng-controller="AppController as ctrl" ng-cloak="true">
+        <div class="slds-page-header">
+          <div class="slds-grid">
+            <div class="slds-col slds-has-flexi-truncate">
+              <div class="slds-media slds-no-space slds-grow">
+                <div class="slds-media__body">
+                  <nav>
+                    <ol class="slds-breadcrumb slds-line-height_reset">
+                      <li class="slds-breadcrumb__item">
+                        <span>Kaptio Reservations</span>
+                      </li>
+                    </ol>
+                  </nav>
+                  <h1 class="slds-page-header__title slds-m-right_small slds-align-middle slds-truncate" title="Availability Search">Trip Availability Search</h1>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ul class="slds-grid slds-page-header__detail-row">
+            <li class="slds-page-header__detail-block">
+              <p class="slds-text-title slds-truncate slds-m-bottom_xx-small" title="Package Filter">Trip</p>
+              <div class="slds-select_container">
+                <select
+                    ng-model="ctrl.filtersChoice.byPackage"
+                    class="slds-select"
+                    ng-options="value for value in ctrl.filters.byPackage">
+                  </select>
+               </div>
+            </li>
+            <li class="slds-page-header__detail-block">
+              <p class="slds-text-title slds-truncate slds-m-bottom_xx-small" title="Package Filter">Trip Filter</p>
+              <div class="slds-select_container">
+                <select
+                    ng-model="ctrl.filtersChoice.byTripType" class="slds-select"
+                    ng-options="value for value in ctrl.filters.byTripType">
+                  </select>
+               </div>
+            </li>
+            <li class="slds-page-header__detail-block">
+              <p class="slds-text-title slds-truncate slds-m-bottom_xx-small" title="Package Filter">Interests</p>
+              <div class="slds-select_container">
+                <select
+                    ng-model="ctrl.filtersChoice.byInterest" class="slds-select"
+                    ng-options="value for value in ctrl.filters.byInterest">
+                  </select>
+               </div>
+            </li>
+            <li class="slds-page-header__detail-block">
+              <p class="slds-text-title slds-truncate slds-m-bottom_xx-small" title="Package Filter">Region</p>
+              <div class="slds-select_container">
+                <select
+                    ng-model="ctrl.filtersChoice.byRegion" class="slds-select"
+                    ng-options="value for value in ctrl.filters.byRegion">
+                  </select>
+               </div>
+            </li>
+            <li class="slds-page-header__detail-block">
+              <p class="slds-text-title slds-truncate slds-m-bottom_xx-small" title="Package Filter">Year</p>
+              <div class="slds-select_container">
+                <select
+                    ng-model="ctrl.filtersChoice.byDepartureYear" class="slds-select"
+                    ng-options="value for value in ctrl.filters.byDepartureYear">
+                            </select>
+               </div>
+            </li>
+            <li class="slds-page-header__detail-block">
+              <p class="slds-text-title slds-truncate slds-m-bottom_xx-small" title="Package Filter">Month</p>
+              <div class="slds-select_container">
+                <select
+                    ng-model="ctrl.filtersChoice.byDepartureMonth" class="slds-select"
+                    ng-options="value for value in ctrl.filters.byDepartureMonth">
+                            </select>
+               </div>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer slds-table_fixed-layout">
+                <thead>
+                    <tr class="slds-text-title_caps">
+                        <th scope="col" style="width: 30%;">
+                            <div class="slds-truncate" title="Client">Trip</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Type">Departure Date</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Status">Availability</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Error Log">Price Per Person <br />Double Occupancy</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Created">Price Per Person <br />Single Occupancy</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="trip in ctrl.filteredTrips() | orderBy: '-departure.departureDate': true">
+                        <td data-label="Trip">
+                            <p class="slds-truncate" title="{{trip.package.name}}">{{trip.package.name}}</p>
+                        </td>
+                        <td data-label="Date">
+                            <div class="slds-truncate" title="{{trip.departure.departureDate | date:'mediumDate'}}">{{trip.departure.departureDate | date:'mediumDate'}}</div>
+                        </td>
+                        <td data-label="Availability">
+                            <div class="slds-truncate" title="{{trip.departure.availability}} seats left">
+                                <span class="slds-badge">{{trip.departure.availability}} seats left</span></div>
+                        </td>
+                        <td data-label="Double Occupancy">
+                        	<div class="slds-truncate">
+                                {{trip.departure.perPersonDouble | currency : $ : 0}}
+                            </div>
+                        </td>
+                        <td data-label="Single Occupancy">
+                            <div class="slds-truncate">{{trip.departure.perPersonSingle | currency : $ : 0}}</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SPINNER -->
+        <style>
+            .c-spinner_container {
+                position: fixed;
+                top: 0;
+                right: 0;
+                left: 0;
+                bottom: 0;
+                z-index: 99999;
+            }
+
+            .c-spinner {
+                position: relative;
+                display: inline-block;
+                top: 50%;
+                left: 50%;
+                margin-top: -50px;
+                margin-left: -50px;
+                width: 100px;
+                height: 100px;
+                border: 2px solid #1688ee;
+                border-radius: 50%;
+                animation: spin 0.75s infinite linear;
+            }
+
+            .c-spinner-1 {
+                border-top-width: 0;
+            }
+
+            .c-spinner::before,
+            .c-spinner::after {
+                left: -2px;
+                top: -2px;
+                display: none;
+                position: absolute;
+                content: '';
+                width: inherit;
+                height: inherit;
+                border: inherit;
+                border-radius: inherit;
+            }
+            .slds-select_container {
+                max-width: 150px;
+            }
+            .slds-scope .slds-page-header__detail-block{
+                padding-left: 0.3rem !important;
+                padding-right: 0.3rem !important;
+                max-width: 20% !important;
+            }
+            .slds-button_small{
+                min-height: 0.3rem !important;
+                line-height: 1.5rem !important;
+            }
+
+            @keyframes spin {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+        <div class="c-spinner_container c-hidden">
+            <div class="c-spinner c-spinner-1"></div>
+        </div>
+
+    </div>
+
+    <script>
+        FlatpickrInstance = null;
+
+        var filters = JSON.parse('{!JSENCODE(filtersJSON)}');
+        var packages = JSON.parse('{!JSENCODE(mockDataJSON)}');
+
+        console.log(filters);
+
+        window.app = angular.module('DemoApp', ['ngRoute', 'angular-flatpickr'])
+        .factory('RemoteService', ['$q', '$rootScope', '$filter', '$timeout', '$http', function($q, $rootScope, $filter, $timeout, $http) {
+            var f = this;
+
+            f.spinner = {
+                show: function() {
+                    jQuery('.c-spinner_container').removeClass('c-hidden');
+                },
+                hide: function() {
+                    jQuery('.c-spinner_container').addClass('c-hidden');
+                }
+            };
+
+            return f;
+        }])
+        .controller('AppController', ['$scope', '$rootScope', '$timeout', '$location', 'RemoteService', function($scope, $rootScope, $timeout, $location, RemoteService) {
+            var ctrl = this;
+
+            ctrl.mode = 'Doom!';
+            ctrl.trips = buildTripsFromPackages(packages);
+
+            console.log(ctrl.trips);
+
+            ctrl.filters = filters;
+            ctrl.filtersChoice = {
+                byDepartureMonth: 'Any',
+                byDepartureYear: 'Any',
+                byInterest: 'Any',
+                byPackage: 'Any',
+                byRegion: 'Any',
+                byTripType: 'Any'
+            }
+
+            ctrl.filteredTrips = function() {
+                console.log('AA');
+                var ft = ctrl.trips;
+                if (ctrl.filtersChoice.byPackage != 'Any') {
+                    ft = ft.filter( function(trip) {
+                        return trip.package.name == ctrl.filtersChoice.byPackage;
+                    });
+                }
+                if (ctrl.filtersChoice.byTripType != 'Any') {
+                    ft = ft.filter( function(trip) {
+                        return trip.package.tripTypes.indexOf(ctrl.filtersChoice.byTripType) > -1;
+                    });
+                }
+                if (ctrl.filtersChoice.byInterest != 'Any') {
+                    ft = ft.filter( function(trip) {
+                        return trip.package.interestTypes.indexOf(ctrl.filtersChoice.byInterest) > -1;
+                    });
+                }
+                if (ctrl.filtersChoice.byRegion != 'Any') {
+                    ft = ft.filter( function(trip) {
+                        return trip.package.regions.indexOf(ctrl.filtersChoice.byRegion) > -1;
+                    });
+                }
+                if (ctrl.filtersChoice.byDepartureYear != 'Any') {
+                    ft = ft.filter( function(trip) {
+                        return trip.departure.year == ctrl.filtersChoice.byDepartureYear;
+                    });
+                }
+                if (ctrl.filtersChoice.byDepartureMonth != 'Any') {
+                    ft = ft.filter( function(trip) {
+                        return trip.departure.month == ctrl.filtersChoice.byDepartureMonth;
+                    });
+                }
+
+                return ft;
+            }
+
+            $timeout(function() {
+
+            })
+
+        }]);
+
+        function buildTripsFromPackages(packages) {
+            var trips = [];
+            for (package of packages) {
+                for (dep of package.departures) {
+                    trips.push({
+                        departure: dep,
+                        package: package
+                    });
+                }
+            }
+            return trips;
+        }
+
+    </script>
+
+</apex:page>
